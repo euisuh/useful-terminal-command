@@ -1,32 +1,11 @@
-# Image Process
-Terminal command related to image processing
+# Image processing
 
-
-## Removing `JPG` duplicates derived from `HEIC`
-```shell
-find . -type f \( -iname '*.jpg' -o -iname '*.heic' \) | \
-awk -F'[./]' '{ 
-    base = tolower($(NF-1)); 
-    ext = tolower($NF); 
-    if (ext == "jpg") {
-        jpg_files[base] = $0;
-    } else if (ext == "heic") {
-        heic_files[base] = $0;
-    }
-} 
-END { 
-    duplicates = 0; 
-    for (base in jpg_files) { 
-        if (base in heic_files) { 
-            duplicates++; 
-            print "Duplicate found and deleting JPG:";
-            print jpg_files[base];
-            print heic_files[base];
-            print "-----";
-            # Delete the jpg file
-            system("rm \"" jpg_files[base] "\"");
-        } 
-    } 
-    print "Number of duplicates found and JPGs deleted:", duplicates; 
-}'
+## Find JPGs that have a HEIC with the same name
+Lists only; deletes nothing. Matches by path without extension, case-insensitive on the extension, so `a/IMG_1.HEIC` pairs with `a/IMG_1.jpg` but not with `b/IMG_1.jpg`.
+```sh
+find . -type f -iname '*.heic' | while IFS= read -r h; do
+  b=${h%.*}
+  for j in "$b".[jJ][pP][gG]; do [ -e "$j" ] && printf '%s\n' "$j"; done
+done
 ```
+To delete what it lists, pipe through `tr '\n' '\0' | xargs -0 rm --` after checking the output. Filenames containing newlines are not handled.
